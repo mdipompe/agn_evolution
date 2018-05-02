@@ -1,0 +1,62 @@
+Some codes for a simple toy model that links halo-galaxy-BH growth, simulates systems over a range of redshifts, and allows you to place cuts to generate mock “observed” samples. Used in DiPompeo et al. (2017): https://arxiv.org/abs/1610.03493
+
+These codes were not written to be very generalized, but they can be tweaked without too much work for various purposes (I think…).  
+
+I tried to make everything self-contained, but it’s possible I missed dependencies on other IDL libraries I have written, particularly:
+https://github.com/mdipompe/general_idl
+https://github.com/mdipompe/halomasses
+
+Pretty much all you need to do is:
+1. Run halo_bh_growth.pro. This will initialize a uniform distribution (to avoid problems of shot noise at high mass, and dealt with using HMF-based weighting) of halo masses at some max z, get corresponding M_* and M_bh values, and then grow them all to z=0.  It will output a file called masses.sav with the initial masses, and masses_grown.sav with all the masses at each step (can be large).
+2. Run generate_samples.pro to pull an “observed” sample from your full population. You can also use “loop_growth.pro” to loop over a range of parameter space to see how that impacts your observed sample.
+3. And that’s it!
+
+If you change things like your redshift range/sampling, you’ll need to run some other things, like get_times.pro, which just calculates cosmological time at each z.   
+
+
+List of all codes:
+
+cosmocalc.pro
+My cosmology calculator.
+
+fit_masses.pro 
+Take a mass distribution, plot a histogram, and fit a spline to it to estimate dN/dM.
+
+generate_fedd.pro
+Generates a Schechter function eddington ratio distribution of N points, with a pre-defined mean value. I don’t remember what the issue was, but to get the actual output mean to be right, had to do some re-mapping of the input value, so it uses the file fedd_map.sav.
+
+generate_samples.pro
+After evolving your system, take the entire parent population and apply some cuts to get an “observed” sample. Spits out a structure with a bunch of properties of the observed sample.
+
+generate_weights.pro
+Make weights based on the DM HMF. Can also just restore them from halo_weights.sav file. Done at z=0 (my testing for our redshift range indicated that evolving the weights with z did not change things enough to warrant the computational hit). Expects you to already have P(k) from CAMB at z=0 in file 'camb_matterpower_0.00000.dat’
+
+halo_bh_growth.pro
+Start with a distribution of halos at some max z, assign them stellar and BH masses, and then grow everything to z=0.  Requires a .sav file with times at each z (times_fine.sav), which can be made with make_times.pro.
+
+halo_growth.pro
+Prescription for how DM halos grow with time (used in halo_bh_growth.pro)
+
+halo_mass_function.pro
+Generate an HMF for a given model.  Note that this has been updated somewhat since I originally did this modeling project.
+
+integrate_bias.pro
+Take a list of halo masses, make a histogram, estimate dNdM, integrate to get bias.
+
+load_cosmology.pro
+Initializes a common block of cosmo params. I wrote this much later, so right now it only is needed for running halo_mass_function.pro, but the other codes could be made nicer with it.
+
+loop_growth.pro
+Re-runs generate_samples.pro many times over a range of all 4 parameters (Luminosity cuts, obscured lifetimes, how far BH mass can lag behind, and mean f_edd). Spits out structure with various properties of the “observed” sample with each set of parameters.
+
+make_fedd_map.pro
+Makes the lookup table for input mean f_edd to the actual value needed in generate_fedd.pro to get the right output value. Don’t remember why this was needed to work exactly, probably worth revisiting…
+
+make_times.pro
+Get cosmological time at each z. This is needed for the BH growth calculation.
+
+plothist_weight.pro
+Makes weighted histograms.
+
+wmean.pro, wmedian.pro 
+Weighted means and medians.
